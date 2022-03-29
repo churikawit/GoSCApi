@@ -282,7 +282,7 @@ func GetMatchStatus( in_buf []byte) (out_buf []byte, match_stt int, err error) {
 	var out_size int = 0
 
 	str := decodeWindows874(string(in_buf))
-	// s_in := Bin2Str(str)
+	// s_in := bin2Str(str)
 	s_in := fmt.Sprintf("%X", str)
 	in_buf = []byte(s_in)
 
@@ -333,7 +333,7 @@ func ReadCardVersion() (string, error) {
 	return string(data), nil
 }
 
-func Int2HexChar(d byte) byte {
+func int2HexChar(d byte) byte {
 	// input 9 -> '9', 10 -> 'A'
 	if (d >= 0 && d <= 9) {
 		return (byte)('0' + d)
@@ -344,7 +344,7 @@ func Int2HexChar(d byte) byte {
 	}
 }
 
-func HexChar2Int(c byte) byte {
+func hexChar2Int(c byte) byte {
 	// input 'A' -> 10, '1' -> 1
 	if '0' <= c && c <= '9' {
 		return (byte)(0 + c - '0')
@@ -357,7 +357,7 @@ func HexChar2Int(c byte) byte {
 	}
 }
 
-func Bin2Str(bin string) string {
+func bin2Str(bin string) string {
 	// input: "5A" -> [0x35][0x41] -> "3541" -> output: [0x33][0x35][0x34][0x31] {double bytes}
 	var output string = "";
 	length := len(bin);
@@ -366,8 +366,8 @@ func Bin2Str(bin string) string {
 		high := byte(temp / 16)
 		low  := byte(temp % 16)
 
-		output += string(Int2HexChar(high))
-		output += string(Int2HexChar(low))
+		output += string(int2HexChar(high))
+		output += string(int2HexChar(low))
 	}
 	return output
 }
@@ -383,13 +383,13 @@ func str2byte(str string) []byte {
 	j := 0
 	var tmp int
 	for i = 0;i < len(b_str); i++ {
-		tmp = int(HexChar2Int(b_str[i]))
+		tmp = int(hexChar2Int(b_str[i]))
 		tmp = tmp * 16
 		i++
 		if(str[i] == 0) {
 			break
 		}
-		tmp = tmp + int(HexChar2Int(b_str[i]))
+		tmp = tmp + int(hexChar2Int(b_str[i]))
 		output[j] = (byte)(tmp)
 		j++
 	}
@@ -425,4 +425,102 @@ func splitReader(buffer string) (reader_list []string) {
 	}
 
 	return reader_list
+}
+
+func ReadCardData() (smartcard *SmartCard, err error) {
+	readerList := ListReader()
+	if (len(readerList) == 0) {
+		e := fmt.Sprintf("[ListReader error: %v]", "no reader")
+		err = errors.New(e)
+		return
+	}
+
+	for i := 0 ;i < len(readerList); i++ {
+		fmt.Printf("reader %d: %v\n", i, readerList[i])
+	}
+
+	// OpenReader
+	if (len(readerList) > 0) {
+		err = OpenReader(readerList[0])
+		if err != nil {
+			e := fmt.Sprintf("[OpenReader error: %v]", err.Error())
+			err = errors.New(e)
+			return
+		}
+	}
+
+	// GetCardStatus
+	err = GetCardStatus()
+	if err != nil {
+		e := fmt.Sprintf("[GetCardStatus error: %v]", err.Error())
+		err = errors.New(e)
+		return
+	}
+
+	// SelectApplet
+	err = SelectApplet("MOI_AID")
+	if err != nil {
+		e := fmt.Sprintf("[SelectApplet error: %v]", err.Error())
+		err = errors.New(e)
+		return
+	}
+
+	cardversion, err := ReadCardVersion()
+	if err != nil {
+		e:= fmt.Sprintf("[ReadCardVersion error: %v]", err.Error())
+		err = errors.New(e)
+		return
+	}
+
+	// Read card data
+	if cardversion == "0003" {
+		data, err3_1 := ReadData(0, 0, 377);
+		if err3_1 != nil {
+			e:= fmt.Sprintf("[ReadData err3_1: %v]", err.Error())
+			err = errors.New(e)
+			return
+		}
+		address, err3_2 := ReadData(0, 5497, 160);
+		if err3_2 != nil {
+			e:= fmt.Sprintf("[ReadData err3_2: %v]", err.Error())
+			err = errors.New(e)
+			return
+		}
+		image, err3_3 := ReadData(0, 377, 5120);
+		if err3_3 != nil {
+			e:= fmt.Sprintf("[ReadData err3_3: %v]", err.Error())
+			err = errors.New(e)
+			return
+		}
+
+		smartcard = CreateSmartCard(cardversion, data, address, image)
+		
+	} else if cardversion == "0002" {
+		data, err2_1 := ReadData(1, 0, 377);
+		if err2_1 != nil {
+			e:= fmt.Sprintf("[ReadData err2_1: %v]", err.Error())
+			err = errors.New(e)
+			return
+		}
+		address, err2_2 := ReadData(0, 4, 150);
+		if err2_2 != nil {
+			e:= fmt.Sprintf("[ReadData err2_2: %v]", err.Error())
+			err = errors.New(e)
+			return
+		}
+		image, err2_3 := ReadData(1, 377, 5120);
+		if err2_3 != nil {
+			e:= fmt.Sprintf("[ReadData err2_3: %v]", err.Error())
+			err = errors.New(e)
+			return
+		}
+
+		smartcard = CreateSmartCard(cardversion, data, address, image)
+	} else {
+		e:= fmt.Sprintf("[ReadCardData error: card version %v is not supported]", cardversion)
+		err = errors.New(e)
+		return
+	}
+
+	return
 }
