@@ -57,6 +57,7 @@ var (
 	scapiDLL           = syscall.NewLazyDLL("scapi_ope.dll")
 	procListReader2    = scapiDLL.NewProc("ListReader")
 	procOpenReader     = scapiDLL.NewProc("OpenReader")
+	procCloseReader    = scapiDLL.NewProc("CloseReader")
 	procGetCardStatus  = scapiDLL.NewProc("GetCardStatus")
 	procSelectApplet   = scapiDLL.NewProc("SelectApplet")
 	procReadData  	   = scapiDLL.NewProc("ReadData")
@@ -90,6 +91,20 @@ func OpenReader(readerName string) (err error) {
 
 	if r != 0 {
 		e := GetScapiStatus(status)
+		err = errors.New(e)
+	} else {
+		err = nil
+	}
+
+	return
+}
+
+func CloseReader() (err error) {
+	r, _, errno := procCloseReader.Call()
+	_ = errno
+
+	if r != 0 {
+		e := fmt.Sprintf("[CloseReader error]")
 		err = errors.New(e)
 	} else {
 		err = nil
@@ -171,6 +186,10 @@ func GetInfoADM() (adm_version, laser_number string, err error) {
 }
 
 func GetLaserNumber() (laser_number string, err error) {
+	err = OpenReader("")
+	if err != nil {
+		return
+	}
 	err = SelectApplet("ADM_AID")
 	if err != nil {
 		return
@@ -185,14 +204,20 @@ func GetLaserNumber() (laser_number string, err error) {
 }
 
 func GetCID() (cid string, err error) {
+	err = OpenReader("")
+	if err != nil {
+		return
+	}
 	err = SelectApplet("ADM_AID")
 	if err != nil {
 		return
 	}
 	cid,_,_,_,_,err = GetCardInfo()
 	if err != nil {
+		cid = ""
 		return
 	}
+	cid = strings.Trim(cid, "\u0000")
 	return
 }
 
@@ -427,6 +452,10 @@ func splitReader(buffer string) (reader_list []string) {
 	return reader_list
 }
 
+// ------------------------------------------------------------------------------
+// Shortcut function
+// ------------------------------------------------------------------------------
+
 func ReadCardData() (smartcard *SmartCard, err error) {
 	readerList := ListReader()
 	if (len(readerList) == 0) {
@@ -522,5 +551,59 @@ func ReadCardData() (smartcard *SmartCard, err error) {
 		return
 	}
 
+	return
+}
+
+func GetEnvelopeByVerifyPin(random string) (envelop string, err error) {
+	err = OpenReader("")
+	if err != nil {
+		return
+	}
+	// SelectApplet
+	err = SelectApplet("ADM_AID")
+	if err != nil {
+		fmt.Printf("SelectApplet error: %#v\n", err.Error())
+		return
+	}
+	
+	adm_version, laser_number, err := GetInfoADM()
+	if err != nil {
+		fmt.Printf("GetInfoADM error: %#v\n", err.Error())
+		return
+	}
+	fmt.Printf("adm_version: %v, laser_number: %v\r\n", adm_version, laser_number)
+
+	// VerifyPIN
+	try_remain, err := VerifyPIN()
+	if err != nil {
+		fmt.Printf("VerifyPIN error: %v\n", err.Error())
+		return
+	}
+	fmt.Printf("try_remain: %v\n", try_remain)
+
+	// GetMatchStatus
+	in_buf := []byte(random)
+	out_buf, match_stt, err := GetMatchStatus( in_buf )
+	if err != nil {
+		fmt.Printf("GetMatchStatus error: %v\n", err.Error())
+		return
+	}
+	if match_stt != 1 {
+		e := fmt.Sprintf("[GetMatchStatus: status=%v, miss match]",match_stt)
+		err = errors.New(e)
+		return
+	}
+	// fmt.Printf("out_buf: %X\r\n", out_buf)
+	// fmt.Printf("out_buf: %v\r\n", string(out_buf))
+	fmt.Printf("match_stt: %v\r\n", match_stt)
+
+	// EnvelopeGMSx
+	b_envelop, err := EnvelopeGMSx(out_buf)
+	if err != nil {
+		fmt.Printf("EnvelopeGMSx error: %v\n", err.Error())
+		return
+	}
+
+	envelop = string(b_envelop)
 	return
 }
