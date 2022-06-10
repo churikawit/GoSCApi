@@ -502,29 +502,7 @@ func ReadCardData() (smartcard *SmartCard, err error) {
 	}
 
 	// Read card data
-	if cardversion == "0003" {
-		data, err3_1 := ReadData(0, 0, 377)
-		if err3_1 != nil {
-			e := fmt.Sprintf("[ReadData err3_1: %v]", err.Error())
-			err = errors.New(e)
-			return
-		}
-		address, err3_2 := ReadData(0, 5497, 160)
-		if err3_2 != nil {
-			e := fmt.Sprintf("[ReadData err3_2: %v]", err.Error())
-			err = errors.New(e)
-			return
-		}
-		image, err3_3 := ReadData(0, 377, 5120)
-		if err3_3 != nil {
-			e := fmt.Sprintf("[ReadData err3_3: %v]", err.Error())
-			err = errors.New(e)
-			return
-		}
-
-		smartcard = CreateSmartCard(cardversion, data, address, image)
-
-	} else if cardversion == "0002" {
+	if cardversion == "0002" {
 		data, err2_1 := ReadData(1, 0, 377)
 		if err2_1 != nil {
 			e := fmt.Sprintf("[ReadData err2_1: %v]", err.Error())
@@ -545,10 +523,27 @@ func ReadCardData() (smartcard *SmartCard, err error) {
 		}
 
 		smartcard = CreateSmartCard(cardversion, data, address, image)
-	} else {
-		e := fmt.Sprintf("[ReadCardData error: card version %v is not supported]", cardversion)
-		err = errors.New(e)
-		return
+	}else { // cardversion == "0003"+
+		data, err3_1 := ReadData(0, 0, 377)
+		if err3_1 != nil {
+			e := fmt.Sprintf("[ReadData err3_1: %v]", err.Error())
+			err = errors.New(e)
+			return
+		}
+		address, err3_2 := ReadData(0, 5497, 160)
+		if err3_2 != nil {
+			e := fmt.Sprintf("[ReadData err3_2: %v]", err.Error())
+			err = errors.New(e)
+			return
+		}
+		image, err3_3 := ReadData(0, 377, 5120)
+		if err3_3 != nil {
+			e := fmt.Sprintf("[ReadData err3_3: %v]", err.Error())
+			err = errors.New(e)
+			return
+		}
+
+		smartcard = CreateSmartCard(cardversion, data, address, image)
 	}
 
 	return

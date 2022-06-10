@@ -35,21 +35,13 @@ func decodeWindows874(input string) string {
 }
 
 func (sc *SmartCard) GetPID() string {
-	if sc.m_card_version == "0003" || sc.m_card_version == "0002" {
-		return string(sc.m_data[4 : 4+13])
-	} else {
-		return ""
-	}
+	return string(sc.m_data[4 : 4+13])
 }
 
 func (sc *SmartCard) GetFullName() string {
-	if sc.m_card_version == "0003" || sc.m_card_version == "0002" {
-		fullname := string(sc.m_data[17 : 17+100])
-		f := decodeWindows874(fullname)
-		return strings.Trim(f, " ")
-	} else {
-		return ""
-	}
+	fullname := string(sc.m_data[17 : 17+100])
+	f := decodeWindows874(fullname)
+	return strings.Trim(f, " ")
 }
 
 func (sc *SmartCard) GetTitle() (output string) {
@@ -101,13 +93,9 @@ func (sc *SmartCard) GetLastName() (output string) {
 }
 
 func (sc *SmartCard) GetFullName_En() string {
-	if sc.m_card_version == "0003" || sc.m_card_version == "0002" {
-		fullname := string(sc.m_data[117 : 117+100])
-		f := decodeWindows874(fullname)
-		return strings.Trim(f, " ")
-	} else {
-		return ""
-	}
+	fullname := string(sc.m_data[117 : 117+100])
+	f := decodeWindows874(fullname)
+	return strings.Trim(f, " ")
 }
 
 func (sc *SmartCard) GetTitle_En() (output string) {
@@ -159,106 +147,68 @@ func (sc *SmartCard) GetLastName_En() (output string) {
 }
 
 func (sc *SmartCard) GetBirthDate() string {
-	if sc.m_card_version == "0003" || sc.m_card_version == "0002" {
-		birthdate := string(sc.m_data[217 : 217+8])
-		return birthdate
-	} else {
-		return ""
-	}
+	birthdate := string(sc.m_data[217 : 217+8])
+	return birthdate
 }
 
 func (sc *SmartCard) GetGender() string {
-	if sc.m_card_version == "0003" || sc.m_card_version == "0002" {
-		gender := string(sc.m_data[225 : 225+1])
-		return gender
-	} else {
-		return ""
-	}
+	gender := string(sc.m_data[225 : 225+1])
+	return gender
 }
 
 // หมายเลขคำร้อง
 func (sc *SmartCard) GetRequestID() string {
-	if sc.m_card_version == "0003" || sc.m_card_version == "0002" {
-		requestid := string(sc.m_data[226 : 226+20])
-		return requestid
-	} else {
-		return ""
-	}
+	requestid := string(sc.m_data[226 : 226+20])
+	return requestid
 }
 
 // BP1NO
 func (sc *SmartCard) GetBP1NO() string {
-	if sc.m_card_version == "0003" || sc.m_card_version == "0002" {
-		requestid := string(sc.m_data[226 : 226+11])
-		return requestid
-	} else {
-		return ""
-	}
+	requestid := string(sc.m_data[226 : 226+11])
+	return requestid
 }
 
 // สถานที่ออกบัตร
 func (sc *SmartCard) GetIssueLocation() string {
-	if sc.m_card_version == "0003" || sc.m_card_version == "0002" {
-		issuelocation := string(sc.m_data[246 : 246+100])
-		issuelocation = decodeWindows874(issuelocation)
-		return strings.Trim(issuelocation, " ")
-	} else {
-		return ""
-	}
+	issuelocation := string(sc.m_data[246 : 246+100])
+	issuelocation = decodeWindows874(issuelocation)
+	return strings.Trim(issuelocation, " ")
 }
 
 // ผู้ออกบัตร
 func (sc *SmartCard) GetIssuePersonID() string {
-	if sc.m_card_version == "0003" || sc.m_card_version == "0002" {
-		data := string(sc.m_data[346 : 346+13])
-		data = decodeWindows874(data)
-		return strings.Trim(data, " ")
-	} else {
-		return ""
-	}
+	data := string(sc.m_data[346 : 346+13])
+	data = decodeWindows874(data)
+	return strings.Trim(data, " ")
 }
 
 func (sc *SmartCard) GetIssueDate() string {
-	if sc.m_card_version == "0003" || sc.m_card_version == "0002" {
-		data := string(sc.m_data[359 : 359+8])
-		data = decodeWindows874(data)
-		return strings.Trim(data, " ")
-	} else {
-		return ""
-	}
+	data := string(sc.m_data[359 : 359+8])
+	data = decodeWindows874(data)
+	return strings.Trim(data, " ")
 }
 
 func (sc *SmartCard) GetExpireDate() string {
-	if sc.m_card_version == "0003" || sc.m_card_version == "0002" {
-		data := string(sc.m_data[367 : 367+8])
-		data = decodeWindows874(data)
-		return strings.Trim(data, " ")
-	} else {
-		return ""
-	}
+	data := string(sc.m_data[367 : 367+8])
+	data = decodeWindows874(data)
+	return strings.Trim(data, " ")
 }
 
 func (sc *SmartCard) GetCardType() string {
 	// Output: 01 = บัตรประชาชน
-	if sc.m_card_version == "0003" || sc.m_card_version == "0002" {
-		data := string(sc.m_data[375 : 375+2])
-		data = decodeWindows874(data)
-		return strings.Trim(data, " ")
-	} else {
-		return ""
-	}
+	data := string(sc.m_data[375 : 375+2])
+	data = decodeWindows874(data)
+	return strings.Trim(data, " ")
 }
 
 func (sc *SmartCard) GetAddress() string {
-	if sc.m_card_version == "0003" {
-		data := string(sc.m_address[0:160])
-		data = decodeWindows874(data)
-		return strings.Trim(data, " ")
-	} else if sc.m_card_version == "0002" {
+	if sc.m_card_version == "0002" {
 		data := string(sc.m_address[0:150])
 		data = decodeWindows874(data)
 		return strings.Trim(data, " ")
-	} else {
-		return ""
+	} else { // sc.m_card_version == "0003"+
+		data := string(sc.m_address[0:160])
+		data = decodeWindows874(data)
+		return strings.Trim(data, " ")
 	}
 }
